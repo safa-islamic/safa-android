@@ -1,0 +1,25 @@
+name: Build Safa Android
+on:
+  push:
+    paths: ['safa-android-project.zip', '.github/workflows/build.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - name: Build unsigned bundle and apk
+        run: |
+          rm -rf proj && mkdir proj && unzip -q safa-android-project.zip -d proj
+          cd proj && chmod +x gradlew && ./gradlew --no-daemon bundleRelease assembleRelease
+      - name: Save results to the repo
+        run: |
+          mkdir -p out
+          cp proj/app/build/outputs/bundle/release/*.aab out/safa-unsigned.aab
+          cp proj/app/build/outputs/apk/release/*.apk out/safa-unsigned.apk
+          git config user.name "build"; git config user.email "build@users.noreply.github.com"
+          git add out && git commit -m "Build unsigned Safa Android [skip ci]" && git push
